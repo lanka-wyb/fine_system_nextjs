@@ -1,19 +1,27 @@
 {
-  "name": "sis-auth-system",
-  "version": "1.0.0",
-  "description": "Student Information System Login & Authentication System",
-  "main": "server.js",
+  "name": "sis-portal-next",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "cookie-parser": "^1.4.7",
-    "express": "^4.21.1",
-    "jsonwebtoken": "^9.0.2"
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
+    "jsonwebtoken": "^9.0.3",
+    "jspdf": "^4.2.1",
+    "mariadb": "^3.5.3",
+    "next": "16.2.9",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.9",
+    "tailwindcss": "^4"
   }
 }

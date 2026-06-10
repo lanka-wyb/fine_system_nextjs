@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Students' Fines/Dues Verification | Dashboard</title>
+  <meta name="description" content="Role-based Student Information System Student, Faculty, and Admin Dashboard.">
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- jsPDF CDN for client-side PDF receipt downloads -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body style="display: block; justify-content: unset; align-items: unset;">
+
+  <!-- Animated Background Blobs -->
+  <div class="bg-blobs">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <!-- Session Countdown Alert Banner -->
+  <div class="container-dashboard">
+    <div class="session-timer-banner hide" id="session-banner">
+      <span>
+        <i class='bx bx-time-five' style="vertical-align: middle; margin-right: 6px;"></i>
+        Security Timeout: Your session will expire in <strong id="session-timer-count">15:00</strong>.
+      </span>
+      <button id="extend-session-btn">Extend Session</button>
+    </div>
+  </div>
+
+  <!-- Main Dashboard Container -->
+  <div class="container-dashboard glass-card">
+    
+    <!-- Dashboard Top Bar -->
+    <header class="dashboard-header">
+      <div class="user-badge">
+        <div class="user-avatar" id="header-avatar">?</div>
+        <div class="user-info-text">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h3 id="header-user-name">Loading Profile...</h3>
+            <span id="header-user-role" class="role-badge">Role</span>
+          </div>
+          <p id="header-user-email">email@school.edu</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-logout" id="logout-btn">
+          <span>Sign Out</span>
+          <i class='bx bx-log-out-circle' style="vertical-align: middle; margin-left: 4px;"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Loading Spinner -->
+    <div id="dashboard-loading" style="text-align: center; padding: 60px 0;">
+      <i class='bx bx-loader-alt bx-spin' style="font-size: 48px; color: var(--primary); margin-bottom: 16px;"></i>
+      <p style="color: var(--text-muted);">Authenticating secure session...</p>
+    </div>
+
+    <!-- ROLE VIEWS -->
+
+    <!-- STUDENT VIEW -->
+    <div id="student-view" class="hide">
+      <!-- 4 Card Stats Layout -->
+      <div class="db-grid db-grid-4" style="margin-bottom: 24px;">
+        <div class="stat-card glass-card">
+          <div class="stat-icon stat-icon-blue"><i class='bx bx-award'></i></div>
+          <div>
+            <div class="stat-label">Cumulative GPA</div>
+            <div class="stat-value" id="student-gpa">0.00</div>
+          </div>
+        </div>
+        <div class="stat-card glass-card">
+          <div class="stat-icon stat-icon-green"><i class='bx bx-bar-chart-alt-2'></i></div>
+          <div>
+            <div class="stat-label">Attendance Rate</div>
+            <div class="stat-value" id="student-attendance-percent">0%</div>
+            <div class="progress-track" style="width: 120px; height: 6px; margin-top: 8px;">
+              <div class="progress-fill" id="student-attendance-bar" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="stat-card glass-card">
+          <div class="stat-icon stat-icon-orange" style="background: rgba(244, 63, 94, 0.15); color: var(--text-danger);"><i class='bx bx-wallet-alt'></i></div>
+          <div>
+            <div class="stat-label">Outstanding Fines</div>
+            <div class="stat-value" id="student-outstanding-fines">$0.00</div>
+          </div>
+        </div>
+        <div class="stat-card glass-card">
+          <div class="stat-icon stat-icon-purple"><i class='bx bx-book-open'></i></div>
+          <div>
+            <div class="stat-label">Academic Semester</div>
+            <div class="stat-value" id="student-semester">Spring 2026</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="db-grid db-grid-main">
+        <!-- Main Panel: Course List & Fines List -->
+        <div>
+          <!-- Course List -->
+          <h2 class="section-title"><i class='bx bx-book-bookmark' style="color: var(--primary);"></i> Enrolled Courses</h2>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Course Code</th>
+                  <th>Course Name</th>
+                  <th>Schedule</th>
+                  <th>Location</th>
+                  <th>Current Score</th>
+                  <th>Grade</th>
+                </tr>
+              </thead>
+              <tbody id="student-courses-table">
+                <!-- Loaded dynamically -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Student Fines list -->
+          <h2 class="section-title" style="margin-top: 32px;"><i class='bx bx-credit-card' style="color: var(--primary);"></i> Outstanding & Paid Fines</h2>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Fine ID</th>
+                  <th>Issuing Faculty</th>
+                  <th>Faculty Member</th>
+                  <th>Classification</th>
+                  <th>Details</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="student-fines-table">
+                <!-- Loaded dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Sidebar Panel: GPA Calculator -->
+        <div>
+          <h2 class="section-title"><i class='bx bx-calculator' style="color: var(--primary);"></i> GPA Simulator</h2>
+          <div class="glass-card" style="padding: 24px; border-radius: 16px;">
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.4;">
+              Simulate how hypothetical grades for future courses will affect your GPA.
+            </p>
+            <div id="gpa-calc-rows">
+              <div class="calc-row">
+                <select class="calc-grade">
+                  <option value="4.0">A (90-100)</option>
+                  <option value="3.7">A- (85-89)</option>
+                  <option value="3.3">B+ (80-84)</option>
+                  <option value="3.0">B (75-79)</option>
+                  <option value="2.7">B- (70-74)</option>
+                  <option value="2.3">C+ (65-69)</option>
+                  <option value="2.0">C (60-64)</option>
+                  <option value="1.0">D (50-59)</option>
+                  <option value="0.0">F (0-49)</option>
+                </select>
+                <input class="calc-credits" type="number" min="1" max="5" value="3" placeholder="Credits">
+              </div>
+            </div>
+            <button class="btn btn-secondary" id="add-calc-row-btn" style="padding: 8px; font-size: 13px;">
+              <i class='bx bx-plus' style="vertical-align: middle;"></i> Add Course
+            </button>
+            <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 600; font-size: 14px;">Simulated GPA:</span>
+              <span id="simulated-gpa-val" style="font-weight: 800; font-size: 20px; color: var(--primary);">0.00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FACULTY VIEW -->
+    <div id="faculty-view" class="hide">
+      <div class="db-grid db-grid-3" style="margin-bottom: 24px;">
+        <div class="stat-card glass-card" style="border-left: 4px solid #0ea5e9;">
+          <div class="stat-icon stat-icon-blue"><i class='bx bx-briefcase'></i></div>
+          <div>
+            <div class="stat-label">Faculty Office</div>
+            <div class="stat-value" id="faculty-office" style="font-size: 18px;">Turing Hall 401</div>
+          </div>
+        </div>
+        <div class="stat-card glass-card" style="border-left: 4px solid #10b981;">
+          <div class="stat-icon stat-icon-green"><i class='bx bx-group'></i></div>
+          <div>
+            <div class="stat-label">Active Students</div>
+            <div class="stat-value" id="faculty-student-count">0</div>
+          </div>
+        </div>
+        <div class="stat-card glass-card" style="border-left: 4px solid #a855f7;">
+          <div class="stat-icon stat-icon-purple"><i class='bx bx-id-card'></i></div>
+          <div>
+            <div class="stat-label">Faculty Department</div>
+            <div class="stat-value" id="faculty-dept" style="font-size: 18px;">Computer Science</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Class Roster Section -->
+      <h2 class="section-title"><i class='bx bx-edit' style="color: var(--primary);"></i> Student Roster & Grade Management</h2>
+      <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 16px;">
+        Review student performance metrics. Click <strong>Edit Grade</strong> to update student scores and update GPA calculations in real-time.
+      </p>
+
+      <div class="table-container" style="margin-bottom: 32px;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Student ID</th>
+              <th>Student Name</th>
+              <th>Course Name</th>
+              <th>Numerical Score</th>
+              <th>Letter Grade</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="faculty-roster-table">
+            <!-- Loaded dynamically -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Fines Section for Faculty -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2 class="section-title" style="margin-bottom: 0;"><i class='bx bx-money-withdraw' style="color: var(--primary);"></i> Fines & Penalties Issued by You</h2>
+        <button class="btn btn-primary" id="faculty-issue-fine-btn" style="width: auto; padding: 8px 16px; font-size: 14px; border-radius: 8px;">
+          <i class='bx bx-plus-circle'></i> Issue Student Fine
+        </button>
+      </div>
+      <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 16px;">
+        Apply financial fines (for damage, late returns, administrative delays) to any student. All receipts are fully auditable.
+      </p>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Fine ID</th>
+              <th>Student Name</th>
+              <th>Student ID</th>
+              <th>Classification</th>
+              <th>Reason/Details</th>
+              <th>Amount</th>
+              <th>Date Issued</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="faculty-issued-fines-table">
+            <!-- Loaded dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ADMIN VIEW -->
+    <div id="admin-view" class="hide">
+      <!-- Top stats -->
+      <div class="db-grid db-grid-3" style="margin-bottom: 24px;">
+        <div class="stat-card glass-card">
+          <div class="stat-icon stat-icon-blue"><i class='bx bx-stats'></i></div>
+          <div>
+            <div class="stat-label">System Active Users</div>
+            <div class="stat-value" id="admin-total-users">0</div>
+          </div>
+        </div>
+        <div class="stat-card glass-card">
+          <div class="stat-icon stat-icon-green"><i class='bx bx-wifi'></i></div>
+          <div>
+            <div class="stat-label">Simulated Live Connections</div>
+            <div class="stat-value" id="admin-active-sessions">0</div>
+          </div>
+        </div>
+        <div class="stat-card glass-card">
+          <div class="stat-icon stat-icon-orange"><i class='bx bx-server'></i></div>
+          <div>
+            <div class="stat-label">Server Uptime</div>
+            <div class="stat-value" id="admin-uptime" style="font-size: 18px;">0s</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Layout -->
+      <div class="db-grid db-grid-main">
+        <!-- Left Column: User Management -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2 class="section-title" style="margin-bottom: 0;"><i class='bx bx-cog' style="color: var(--primary);"></i> User Administration</h2>
+            <button class="btn btn-primary" id="admin-add-user-btn" style="width: auto; padding: 8px 16px; font-size: 14px; border-radius: 8px;">
+              <i class='bx bx-plus'></i> Add User Account
+            </button>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>User ID</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-users-table">
+                <!-- Loaded dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Right Column: Audit Logs -->
+        <div>
+          <h2 class="section-title"><i class='bx bx-terminal' style="color: var(--primary);"></i> Security Audit Logs</h2>
+          <div class="glass-card" style="padding: 20px; border-radius: 16px;">
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+              Real-time audit trailing of authorization attempts, role modifications, and admin actions.
+            </p>
+            <div class="admin-log-box" id="admin-logs-console">
+              <!-- Loaded dynamically -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Full-Width Bottom Block: Fines Registry -->
+      <div style="margin-top: 32px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2 class="section-title" style="margin-bottom: 0;"><i class='bx bx-money' style="color: var(--primary);"></i> Financial Registry & Fines Auditing</h2>
+          <div style="display: flex; gap: 24px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 12px; font-size: 13px;">
+            <span>Outstanding Fines: <strong id="admin-outstanding-fines-val" style="color: var(--text-danger)">$0.00</strong></span>
+            <span style="border-left: 1px solid var(--border-color); padding-left: 16px;">Collected Payments: <strong id="admin-collected-fines-val" style="color: var(--text-success)">$0.00</strong></span>
+          </div>
+        </div>
+        
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Fine ID</th>
+                <th>Student ID & Name</th>
+                <th>Issuing Faculty</th>
+                <th>Issued By</th>
+                <th>Fine Classification</th>
+                <th>Amount</th>
+                <th>Date Issued</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admin-fines-table">
+              <!-- Loaded dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MODALS -->
+
+  <!-- Grade Editor Modal (Faculty) -->
+  <div class="modal-overlay" id="grade-modal">
+    <div class="modal-content glass-card">
+      <button class="modal-close" id="grade-modal-close">&times;</button>
+      <h2 class="section-title" style="margin-bottom: 24px;"><i class='bx bx-edit'></i> Edit Student Grade</h2>
+      
+      <div id="grade-modal-alert" class="alert alert-danger hide">
+        <i class='bx bx-error-circle'></i>
+        <span id="grade-modal-error-msg">Error</span>
+      </div>
+
+      <form id="grade-modal-form">
+        <input type="hidden" id="grade-student-id">
+        <input type="hidden" id="grade-course-code">
+
+        <div class="form-group">
+          <label class="form-label">Student Name</label>
+          <input class="form-input" type="text" id="grade-student-name" readonly style="background: rgba(255,255,255,0.01); color: var(--text-muted); border-color: transparent; padding-left: 16px;">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Course</label>
+          <input class="form-input" type="text" id="grade-course-name" readonly style="background: rgba(255,255,255,0.01); color: var(--text-muted); border-color: transparent; padding-left: 16px;">
+        </div>
+
+        <div style="display: flex; gap: 16px; margin-bottom: 20px;">
+          <div style="flex: 2;">
+            <label class="form-label" for="grade-score-input">Numerical Score (0-100)</label>
+            <input class="form-input" type="number" id="grade-score-input" min="0" max="100" required style="padding-left: 16px;">
+          </div>
+          <div style="flex: 1;">
+            <label class="form-label" for="grade-letter-input">Grade</label>
+            <select class="form-input" id="grade-letter-input" style="padding-left: 16px; background-color: #0b0f19;">
+              <option value="A+">A+</option>
+              <option value="A">A</option>
+              <option value="A-">A-</option>
+              <option value="B+">B+</option>
+              <option value="B">B</option>
+              <option value="B-">B-</option>
+              <option value="C+">C+</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+              <option value="F">F</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="grade-save-btn">
+          <span>Apply Changes</span>
+          <i class='bx bx-save'></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create User Modal (Admin) -->
+  <div class="modal-overlay" id="user-modal">
+    <div class="modal-content glass-card">
+      <button class="modal-close" id="user-modal-close">&times;</button>
+      <h2 class="section-title" style="margin-bottom: 24px;"><i class='bx bx-user-plus'></i> Add User Account</h2>
+      
+      <div id="user-modal-alert" class="alert alert-danger hide">
+        <i class='bx bx-error-circle'></i>
+        <span id="user-modal-error-msg">Error</span>
+      </div>
+
+      <form id="user-modal-form">
+        <div class="form-group">
+          <label class="form-label" for="admin-new-name">Full Name</label>
+          <div class="input-wrapper">
+            <i class='bx bx-user input-icon'></i>
+            <input class="form-input" type="text" id="admin-new-name" placeholder="Alice Smith" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="admin-new-email">Email Address</label>
+          <div class="input-wrapper">
+            <i class='bx bx-envelope input-icon'></i>
+            <input class="form-input" type="email" id="admin-new-email" placeholder="alice@school.edu" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="admin-new-role">System Role</label>
+          <div class="input-wrapper">
+            <i class='bx bx-user-pin input-icon'></i>
+            <select class="form-input" id="admin-new-role" style="padding-left: 48px; background-color: #0b0f19;" required>
+              <option value="Student">Student</option>
+              <option value="Faculty">Faculty</option>
+              <option value="Admin">Admin</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Faculty selection department (Admin side) -->
+        <div class="form-group hide" id="admin-new-faculty-wrapper">
+          <label class="form-label" for="admin-new-faculty">Assigned Department</label>
+          <div class="input-wrapper">
+            <i class='bx bx-id-card input-icon'></i>
+            <select class="form-input" id="admin-new-faculty" style="padding-left: 48px; background-color: #0b0f19;">
+              <option value="Medicine">Medicine</option>
+              <option value="Management">Management</option>
+              <option value="Science">Science</option>
+              <option value="Technology">Technology</option>
+              <option value="Agriculture">Agriculture</option>
+              <option value="Food Science">Food Science</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="admin-new-password">Temporary Password</label>
+          <div class="input-wrapper">
+            <i class='bx bx-lock-alt input-icon'></i>
+            <input class="form-input" type="password" id="admin-new-password" placeholder="••••••••" required>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="margin-top: 10px;">
+          <span>Provision User</span>
+          <i class='bx bx-plus-circle'></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit User Modal (Admin) -->
+  <div class="modal-overlay" id="edit-user-modal">
+    <div class="modal-content glass-card">
+      <button class="modal-close" id="edit-user-modal-close">&times;</button>
+      <h2 class="section-title" style="margin-bottom: 24px;"><i class='bx bx-edit'></i> Edit User Account</h2>
+      
+      <div id="edit-user-modal-alert" class="alert alert-danger hide">
+        <i class='bx bx-error-circle'></i>
+        <span id="edit-user-modal-error-msg">Error</span>
+      </div>
+
+      <form id="edit-user-modal-form">
+        <input type="hidden" id="admin-edit-id">
+
+        <div class="form-group">
+          <label class="form-label" for="admin-edit-name">Full Name</label>
+          <div class="input-wrapper">
+            <i class='bx bx-user input-icon'></i>
+            <input class="form-input" type="text" id="admin-edit-name" placeholder="Full Name" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="admin-edit-email">Email Address</label>
+          <div class="input-wrapper">
+            <i class='bx bx-envelope input-icon'></i>
+            <input class="form-input" type="email" id="admin-edit-email" placeholder="email@school.edu" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="admin-edit-role">System Role</label>
+          <div class="input-wrapper">
+            <i class='bx bx-user-pin input-icon'></i>
+            <select class="form-input" id="admin-edit-role" style="padding-left: 48px; background-color: #0b0f19;" required>
+              <option value="Student">Student</option>
+              <option value="Faculty">Faculty</option>
+              <option value="Admin">Admin</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Faculty selection department (Admin edit) -->
+        <div class="form-group hide" id="admin-edit-faculty-wrapper">
+          <label class="form-label" for="admin-edit-faculty">Assigned Department</label>
+          <div class="input-wrapper">
+            <i class='bx bx-id-card input-icon'></i>
+            <select class="form-input" id="admin-edit-faculty" style="padding-left: 48px; background-color: #0b0f19;">
+              <option value="Medicine">Medicine</option>
+              <option value="Management">Management</option>
+              <option value="Science">Science</option>
+              <option value="Technology">Technology</option>
+              <option value="Agriculture">Agriculture</option>
+              <option value="Food Science">Food Science</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="admin-edit-status">Account Status</label>
+          <div class="input-wrapper">
+            <i class='bx bx-toggle-left input-icon'></i>
+            <select class="form-input" id="admin-edit-status" style="padding-left: 48px; background-color: #0b0f19;" required>
+              <option value="active">Active</option>
+              <option value="locked">Locked Out</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="admin-edit-password">New Password (leave blank to keep current)</label>
+          <div class="input-wrapper">
+            <i class='bx bx-lock-alt input-icon'></i>
+            <input class="form-input" type="password" id="admin-edit-password" placeholder="••••••••">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="margin-top: 10px;">
+          <span>Save Changes</span>
+          <i class='bx bx-save'></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Fine Creator Modal (Faculty) -->
+  <div class="modal-overlay" id="fine-modal">
+    <div class="modal-content glass-card">
+      <button class="modal-close" id="fine-modal-close">&times;</button>
+      <h2 class="section-title" style="margin-bottom: 24px;"><i class='bx bx-money'></i> Issue Student Fine</h2>
+      
+      <div id="fine-modal-alert" class="alert alert-danger hide">
+        <i class='bx bx-error-circle'></i>
+        <span id="fine-modal-error-msg">Error</span>
+      </div>
+
+      <form id="fine-modal-form">
+        <div class="form-group">
+          <label class="form-label" for="fine-student-select">Target Student</label>
+          <div class="input-wrapper">
+            <i class='bx bx-user input-icon'></i>
+            <select class="form-input" id="fine-student-select" style="padding-left: 48px; background-color: #0b0f19;" required>
+              <!-- Loaded dynamically -->
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="fine-type-select">Fine Classification</label>
+          <div class="input-wrapper">
+            <i class='bx bx-purchase-tag input-icon'></i>
+            <select class="form-input" id="fine-type-select" style="padding-left: 48px; background-color: #0b0f19;" required>
+              <option value="Library Late Fee">Library Late Fee</option>
+              <option value="Laboratory Damage">Laboratory Damage</option>
+              <option value="Equipment Damage">Equipment Damage</option>
+              <option value="Tuition Balance">Tuition Balance</option>
+              <option value="Administrative Fee">Administrative Fee</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="fine-amount-input">Fine Amount ($)</label>
+          <div class="input-wrapper">
+            <i class='bx bx-dollar input-icon'></i>
+            <input class="form-input" type="number" id="fine-amount-input" min="5" max="1000" step="0.01" placeholder="50.00" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="fine-details-input">Reason/Details</label>
+          <textarea class="form-input" id="fine-details-input" placeholder="e.g. Overdue library book on algorithms, damage to chemistry equipment..." style="padding-left: 16px; min-height: 80px; resize: vertical;" required></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="margin-top: 10px;">
+          <span>Issue Penalty</span>
+          <i class='bx bx-shield-quarter'></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
