@@ -564,7 +564,7 @@ document.addEventListener('DOMContentLoaded', () => {
     doc.setTextColor(255, 255, 255);
     doc.setFont('Helvetica', 'bold');
     doc.setFontSize(22);
-    doc.text('AURA SIS - OFFICIAL RECEIPT', 20, 25);
+    doc.text("Students' Fines/Dues Verification Receipt", 20, 25);
 
     // Subtitle
     doc.setFont('Helvetica', 'normal');
@@ -629,7 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
     doc.setFontSize(9);
     doc.setFont('Helvetica', 'oblique');
     doc.text('This document serves as verification that the penalty has been cleared from student ledger registry records.', 20, 252);
-    doc.text('No physical signature required. Verified electronically by AURA Registrar.', 20, 257);
+    doc.text("No physical signature required. Verified electronically by Students' Fines/Dues Verification Registrar.", 20, 257);
 
     // Save PDF
     doc.save(`Receipt_Fine_${fine.id.toUpperCase()}.pdf`);
