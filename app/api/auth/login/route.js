@@ -95,8 +95,8 @@ export async function POST(request) {
     const cookieStore = await cookies();
     cookieStore.set('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: false, // Set to false to allow deployments over HTTP (like IP address testing)
+      sameSite: 'lax',
       maxAge: 15 * 60, // 15 minutes
       path: '/'
     });
